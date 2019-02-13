@@ -4,9 +4,17 @@
  */
 package tcpchat.Server;
 
-import java.net.DatagramSocket;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.InetAddress;
-import java.util.Random;
+import java.net.Socket;
+import java.util.ArrayList;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tcpchat.Client.Client;
 
 /**
  * 
@@ -14,29 +22,36 @@ import java.util.Random;
  */
 public class ClientConnection {
 	
-	static double TRANSMISSION_FAILURE_RATE = 0.3;
-	
 	private final String m_name;
 	private final InetAddress m_address;
 	private final int m_port;
+	private String input = "{}";
+	public ObjectMapper om = new ObjectMapper();
 
-	public ClientConnection(String name, InetAddress address, int port) {
+	ChatMessage cm;
+	
+	
+	public ClientConnection(String name, InetAddress address, int port) throws JsonParseException, JsonMappingException, IOException {
 		m_name = name;
 		m_address = address;
 		m_port = port;
+		this.cm = om.readValue(input, ChatMessage.class);
 	}
 
-	public void sendMessage(String message, DatagramSocket socket) {
+	public void sendMessage(ChatMessage cm, Socket socket) throws IOException {
+//		OutputStream out = socket.getOutputStream();
+//        ObjectOutputStream oos = new ObjectOutputStream(out);
+//		oos.writeObject(cm);
+//		JsonFactory jfactory = new JsonFactory();
+//		JsonGenerator jGenerator = jfactory
+//		  .createGenerator(out, JsonEncoding.UTF8);
+//		ObjectOutputStream oos1 = new ObjectOutputStream(out);
+		System.out.println("Message Sent from Server to Client");
 		
-		Random generator = new Random();
-    	double failure = generator.nextDouble();
-    	
-    	if (failure > TRANSMISSION_FAILURE_RATE){
-    		// TODO: send a message to this client using socket.
-    	} else {
-    		// Message got lost
-    	}
-		
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+//		JsonFactory jfactory = new JsonFactory();
+//		JsonGenerator jGenerator = jfactory
+//		  .createGenerator(stream, JsonEncoding.UTF8);
 	}
 
 	public boolean hasName(String testName) {
