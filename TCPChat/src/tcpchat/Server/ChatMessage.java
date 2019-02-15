@@ -4,17 +4,18 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonRootName;
 
 @JsonRootName("server_message")
-@JsonPropertyOrder(value = {"name", "port", "ip", "message", "id", "timestamp"})
+@JsonPropertyOrder(value = {"name", "port", "ip", "command", "recipent", "message", "id", "timestamp"})
 public class ChatMessage{
 	private String message;
+	private String command;
 	private String ip;
 	private String name;
 	private String id;
+	private String recipent;
 	private long timeStamp;
 	private int port;
 	
 	public ChatMessage() {
-		
 	}
 	
 	public String getMessage() {
@@ -68,5 +69,21 @@ public class ChatMessage{
 	@Override
 	public String toString() {
 		return "[" + name + "] sent-> " + message;
+	}
+
+	public String getCommand() {
+		return command;
+	}
+
+	public void setCommand(String command) {
+		this.command = command;
+	}
+
+	public String getRecipent() {
+		return recipent;
+	}
+
+	public void setRecipent(String recipent) {
+		this.recipent = recipent;
 	}
 }

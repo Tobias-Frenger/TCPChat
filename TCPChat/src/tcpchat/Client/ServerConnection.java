@@ -4,6 +4,7 @@
  */
 package tcpchat.Client;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -11,13 +12,16 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import tcpchat.Server.Server;
 
 /**
  *
@@ -38,9 +42,9 @@ public class ServerConnection {
 
 	public ServerConnection(String hostName, int port, Client client)
 			throws JsonParseException, JsonMappingException, IOException {
-		setM_serverPort(port);
+		setServerPort(port);
 		this.client = client;
-		this.setM_ip(hostName);
+		this.setIp(hostName);
 		try {
 			m_serverAddress = InetAddress.getByName(hostName);
 		} catch (UnknownHostException e) {
@@ -51,81 +55,83 @@ public class ServerConnection {
 
 		cm.setId(UUID.randomUUID().toString());
 		cm.setIp(hostName);
-		cm.setMessage("Write a message to the server!");
-		cm.setName("W1z@rdUnkn0wN1");
+		cm.setMessage("/connect");
+		cm.setCommand("connect");
 		cm.setTimeStamp(System.currentTimeMillis());
 		cm.setPort(port);
-
-		client.getGUI().displayMessage("ID: \t" + cm.getId());
-		client.getGUI().displayMessage("IP: \t" + cm.getIp());
-		client.getGUI().displayMessage("Port: \t" + cm.getPort());
-		client.getGUI().displayMessage("Name: \t" + cm.getName());
-		client.getGUI().displayMessage("Time: \t" + cm.getTimeStamp());
-		client.getGUI().displayMessage("Message: \t" + cm.getMessage());
 	}
 
-	public boolean handshake(String name) throws IOException, ClassNotFoundException {
+	public boolean handshake(String name) {
 		cm.setName(name);
 		sendChatMessage(cm);
 		receiveChatMessage();
 		return true;
 	}
 
-	public String receiveChatMessage() throws IOException, ClassNotFoundException {
+	public void receiveChatMessage() {
 		// receive message
-		InputStream is = m_socket.getInputStream();
-		ObjectInputStream ois = new ObjectInputStream(is);
-		// deserialize message
-		ObjectMapper om = new ObjectMapper();
-		Object obj = ois.readObject();
-		JsonNode jn = om.readTree(obj.toString());
-		ChatMessage cm = om.readerFor(ChatMessage.class).readValue(jn);
-		client.getGUI().displayMessage(cm.toString());
-		System.out.println("post m_socket.getInputStream()");
-		return "";
-	}
-
-	public void sendChatMessage(ChatMessage chatMessage) throws IOException {
 		try {
-			//Serialize the chatMessage
+			InputStream is = m_socket.getInputStream();
+			DataInputStream dis = new DataInputStream(is);
+			ObjectInputStream ois = new ObjectInputStream(dis);
+			// deserialize message
 			ObjectMapper om = new ObjectMapper();
-			String serializedMessage = om.writeValueAsString(chatMessage);
-			System.out.println(serializedMessage);
-			OutputStream os = m_socket.getOutputStream();
-			ObjectOutputStream objectos = new ObjectOutputStream(os);
-			objectos.writeObject(serializedMessage);
-			System.out.println("message sent");
+			Object obj = ois.readObject();
+			ChatMessage cm;
+
+			cm = om.readValue(obj.toString(), ChatMessage.class);
+
+			String serializedClass = om.writeValueAsString(cm);
+			System.out.println("received: " + serializedClass);
+			client.getGUI().displayMessage(cm.toString());
+		} catch (SocketException e) {
+			client.listenForMessages = false;
+			client.getGUI().displayMessage("Possible server failure\n" + "Try restarting your client");
 		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
 	}
 
+	public void sendChatMessage(ChatMessage chatMessage) {
+		try {
+			// Serialize the chatMessage
+			ObjectMapper om = new ObjectMapper();
+			String serializedMessage;
+			serializedMessage = om.writeValueAsString(chatMessage);
+			OutputStream os;
+			os = m_socket.getOutputStream();
+			ObjectOutputStream objectos = new ObjectOutputStream(os);
+			objectos.writeObject(serializedMessage);
+			System.out.println("message sent: ----- : " + serializedMessage);
+		} catch (JsonProcessingException e1) {
+			e1.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+	}
+
 	public Socket getSocket() {
-		
+
 		return m_socket;
 	}
 
-	public String getM_ip() {
+	public String getIp() {
 		return m_ip;
 	}
 
-	public void setM_ip(String m_ip) {
+	public void setIp(String m_ip) {
 		this.m_ip = m_ip;
 	}
 
-	public int getM_serverPort() {
+	public int getServerPort() {
 		return m_serverPort;
 	}
 
-	public void setM_serverPort(int m_serverPort) {
+	public void setServerPort(int m_serverPort) {
 		this.m_serverPort = m_serverPort;
 	}
-
-//	public void sendChatMessage(ChatMessage chatMessage) throws IOException {
-//		OutputStream outputS = m_socket.getOutputStream();
-//		ObjectOutputStream objOutS = new ObjectOutputStream(outputS);
-//		objOutS.writeObject(json);
-//		System.out.println("message sent");
-//	}
 
 }
