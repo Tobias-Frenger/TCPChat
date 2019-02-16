@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class ClientConnection {
 	
-	private final String m_name;
+	private String m_name;
 	private Socket m_socket;
 	private String input = "{}";
 
@@ -27,6 +27,9 @@ public class ClientConnection {
 
 	ChatMessage cm;
 	
+	protected Socket getSocket() {
+		return m_socket;
+	}
 	
 	public ClientConnection(String name, Socket socket) throws JsonParseException, JsonMappingException, IOException {
 		m_name = name;
@@ -40,7 +43,16 @@ public class ClientConnection {
 		String serializedClass = om.writeValueAsString(cm);
 		System.out.println("sent to " + cm.getName() + ": " + serializedClass);
 		oos.writeObject(serializedClass);
-		System.out.println("Message Sent from Server to Client - " + m_name);
+		System.out.println("Message Sent from Server to Client - " + m_name + "\n" + serializedClass);
+	}
+	
+	public String getName() {
+		return m_name;
+	}
+	
+	public void setName(String name) {
+		System.out.println("m_name = " + m_name);
+		m_name = name;
 	}
 	
 	public boolean hasSocket(Socket socket) {

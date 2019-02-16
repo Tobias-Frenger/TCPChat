@@ -9,6 +9,7 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -41,7 +42,7 @@ public class ChatGUI extends JFrame implements ActionListener{
 	m_chatOutput.setEditable(false);
 	m_chatOutput.setBackground(Color.BLACK);
 	m_chatOutput.setForeground(Color.GREEN);
-
+	
 	Container pane = getContentPane();
 	pane.add(m_chatOutput, BorderLayout.NORTH);
 	pane.add(m_chatInput, BorderLayout.SOUTH);
@@ -51,11 +52,11 @@ public class ChatGUI extends JFrame implements ActionListener{
 	setDefaultCloseOperation(EXIT_ON_CLOSE);
 	setVisible(true);
     }
-
+    
     public void displayMessage(String message) {
 	m_chatOutput.append(message+"\n");
     }
-
+    
     public String getInput() {
 	return m_chatInput.getText();
     }

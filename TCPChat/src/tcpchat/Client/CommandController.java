@@ -1,22 +1,32 @@
 package tcpchat.Client;
 
+import java.io.IOException;
+import java.net.Socket;
+
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+
 /*
- * This class contains three methods that detects, trims and, sets the command for the message
- * @method detectCommand 	- calls the removeKeyWord method and then calls the setCommand method
- * @method removeKeyWord 	- simply removes the key word from the message
- * @method setCommand		- sets the command for the message
+ * This class contains three methods that detects, trims and, sets the command for the message.
+ * Note that the class only handles outgoing messages.
+ * @method detectCommand 	- calls the removeKeyWord method and then calls the setCommand method.
+ * @method removeKeyWord 	- simply removes the key word from the message.
+ * @method setCommand		- sets the command for the message.
+ * @method detectRecipent	- is used to set the recipient in the outgoing message.
+ * @method changeName		- is used to change the name of the client; client-side only.
  * 
  * @author a16tobfr
  */
 public class CommandController {
 	ChatMessage cm;
-	
-	public CommandController(ChatMessage cm) {
+	Client client;
+
+	public CommandController(ChatMessage cm, Client client) {
 		this.cm = cm;
+		this.client = client;
 	}
-	
+
 	protected void detectCommand() {
-		
 		if (cm.getMessage().startsWith("/tell")) {
 			removeKeyWord("/tell");
 			setCommand(CommandType.TELL);
@@ -27,6 +37,19 @@ public class CommandController {
 			removeKeyWord("/help");
 			setCommand(CommandType.HELP);
 		} else if (cm.getMessage().startsWith("/join")) {
+			client.listenForMessages = true;
+			try {
+				client.setConnection(new ServerConnection("127.0.0.1", 25001, client));
+			} catch (JsonParseException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (JsonMappingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			removeKeyWord("/join");
 			setCommand(CommandType.JOIN);
 		} else if (cm.getMessage().startsWith("/leave")) {
@@ -48,11 +71,44 @@ public class CommandController {
 			setCommand(CommandType.GENERIC);
 		}
 	}
-	
+
+	private void detectRecipient() {
+		while (cm.getMessage().startsWith(" ")) {
+			cm.setMessage(cm.getMessage().replaceFirst(" ", ""));
+		}
+		String temp2;
+		int index = cm.getMessage().indexOf(" ");
+		if (index > -1) { // Check if there is more than one occurrence.
+			temp2 = cm.getMessage().substring(0, index); // Extract first word from message.
+		} else {
+			temp2 = cm.getMessage(); // temp2 is the first word.
+		}
+		cm.setRecipent(temp2);
+		System.out.println("{sending to -> " + temp2 + "}");
+	}
+
+	private void changeName() {
+		while (cm.getMessage().startsWith(" ")) {
+			cm.setMessage(cm.getMessage().replaceFirst(" ", ""));
+		}
+		String temp2;
+		int index = cm.getMessage().indexOf(" ");
+		if (index > -1) { // Check if there is more than one occurrence.
+			temp2 = cm.getMessage().substring(0, index); // Extract the first word from message.
+		} else {
+			temp2 = cm.getMessage(); // temp2 is the first word.
+		}
+		cm.setRecipent(temp2);
+		System.out.println(temp2 + " is my new name!");
+		client.getGUI().setTitle(temp2);
+		client.changeName(temp2);
+	}
+
 	private void removeKeyWord(String keyWord) {
 		switch (keyWord) {
 		case "/tell":
 			cm.setMessage(cm.getMessage().replaceFirst("/tell", ""));
+			detectRecipient();
 			break;
 		case "/list ":
 			cm.setMessage(cm.getMessage().replaceFirst("/list", ""));
@@ -74,6 +130,7 @@ public class CommandController {
 			break;
 		case "/rename":
 			cm.setMessage(cm.getMessage().replaceFirst("/rename", ""));
+			changeName();
 			break;
 		case "/connect":
 			cm.setMessage(cm.getMessage().replaceFirst("/connect", ""));
@@ -84,7 +141,7 @@ public class CommandController {
 			cm.setMessage(cm.getMessage().replaceFirst(" ", ""));
 		}
 	}
-	
+
 	private void setCommand(CommandType ct) {
 		switch (ct) {
 		case GENERIC:

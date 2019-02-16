@@ -14,14 +14,13 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Date;
 import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import tcpchat.Server.Server;
 
 /**
  *
@@ -30,14 +29,15 @@ import tcpchat.Server.Server;
  */
 public class ServerConnection {
 	private Socket m_socket = null;
-	private InetAddress m_serverAddress = null;
+
 	private int m_serverPort = -1;
 	private String input = "{}";
 	public ObjectMapper objectMapper = new ObjectMapper();
 	public ChatMessage cm = objectMapper.readValue(input, ChatMessage.class);
 //	private ObjectMapper objectMapper = new ObjectMapper();
+	private InetAddress m_serverAddress;
 	private Client client;
-	private String message;
+//	private String message;
 	private String m_ip;
 
 	public ServerConnection(String hostName, int port, Client client)
@@ -60,7 +60,7 @@ public class ServerConnection {
 		cm.setTimeStamp(System.currentTimeMillis());
 		cm.setPort(port);
 	}
-
+	
 	public boolean handshake(String name) {
 		cm.setName(name);
 		sendChatMessage(cm);
@@ -68,22 +68,36 @@ public class ServerConnection {
 		return true;
 	}
 
+	@SuppressWarnings("deprecation")
 	public void receiveChatMessage() {
 		// receive message
 		try {
+			System.out.println("1");
 			InputStream is = m_socket.getInputStream();
+			System.out.println("2");
 			DataInputStream dis = new DataInputStream(is);
-			ObjectInputStream ois = new ObjectInputStream(dis);
+			System.out.println("3");
+			ObjectInputStream ois = new ObjectInputStream(is);
+			System.out.println("4");
 			// deserialize message
 			ObjectMapper om = new ObjectMapper();
 			Object obj = ois.readObject();
 			ChatMessage cm;
-
+			System.out.println("hey");
 			cm = om.readValue(obj.toString(), ChatMessage.class);
-
+			System.out.println(cm.getMessage() + " --");
+			if (cm.getCommand().equals("rename")) {
+				System.out.println("RECIPENT IS ! : " + cm.getRecipent());
+				client.getClientMessage().setName(cm.getRecipent());
+			} else if (cm.getCommand().equals("renameDuplicate")) {
+				client.changeName(cm.getName());
+				client.getGUI().setTitle("Chat client for " + cm.getName());
+				client.getClientMessage().setName(cm.getName());
+			}
 			String serializedClass = om.writeValueAsString(cm);
 			System.out.println("received: " + serializedClass);
-			client.getGUI().displayMessage(cm.toString());
+			Date date = new Date();
+			client.getGUI().displayMessage("[" + date.getHours() + ":" + date.getMinutes() + "] " + cm.getMessage());
 		} catch (SocketException e) {
 			client.listenForMessages = false;
 			client.getGUI().displayMessage("Possible server failure\n" + "Try restarting your client");
@@ -114,10 +128,13 @@ public class ServerConnection {
 	}
 
 	public Socket getSocket() {
-
 		return m_socket;
 	}
-
+	
+	protected void setSocket(Socket socket) {
+		m_socket = socket;
+	}
+	
 	public String getIp() {
 		return m_ip;
 	}

@@ -16,10 +16,15 @@ public class Client implements ActionListener {
 	private final ChatGUI m_GUI;
 	private ServerConnection m_connection = null;
 	private ChatMessage cm = new ChatMessage();
-	private CommandController commandController = new CommandController(cm);
+	private CommandController commandController = new CommandController(cm, this);
 	public boolean listenForMessages = true;
-
+	
+	protected ChatMessage getClientMessage() {
+		return cm;
+	}
+	
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
+		System.out.println(args[0] + " - " + args[1] + " - " + args[2]);
 		if (args.length < 3) {
 			System.err.println("Usage: java Client serverhostname serverportnumber username");
 			System.exit(-1);
@@ -31,6 +36,10 @@ public class Client implements ActionListener {
 			System.err.println("Error: port number must be an integer.");
 			System.exit(-1);
 		}
+	}
+	
+	protected void changeName(String name) {
+		m_name = name;
 	}
 
 	@SuppressWarnings("deprecation")
@@ -68,7 +77,7 @@ public class Client implements ActionListener {
 			m_GUI.displayMessage("Today is Saturday");
 			break;
 		default:
-			m_GUI.displayMessage("Today is unknown day");
+			m_GUI.displayMessage("Today is unknown");
 			break;
 		}
 		long hour = date.getHours();
@@ -76,6 +85,14 @@ public class Client implements ActionListener {
 		String t = "" + hour + ":" + min;
 		m_GUI.displayMessage("Started client at: " + t);
 
+	}
+	
+	protected ServerConnection getConnection() {
+		return m_connection;
+	}
+	
+	protected void setConnection(ServerConnection sc) {
+		m_connection = sc;
 	}
 
 	private void connectToServer(String hostName, int port)
@@ -93,10 +110,13 @@ public class Client implements ActionListener {
 		return m_GUI;
 	}
 
-	private void listenForServerMessages() {
+	protected void listenForServerMessages() {
 		do {
+			System.out.println("preReceive");
+			System.out.println("1" + listenForMessages);
 			m_connection.receiveChatMessage();
 			System.out.println("client received message");
+			System.out.println("2" + listenForMessages);
 		} while (listenForMessages);
 	}
 
@@ -109,7 +129,7 @@ public class Client implements ActionListener {
 		cm.setMessage(m_GUI.getInput());
 		// check if input contained a command
 		commandController.detectCommand();
-		System.out.println("2action: " + cm.toString());
+		System.out.println("2action: " + cm.getMessage());
 		m_connection.sendChatMessage(cm);
 		m_GUI.clearInput();
 	}

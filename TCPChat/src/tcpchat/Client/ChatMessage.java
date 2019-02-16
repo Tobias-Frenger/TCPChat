@@ -75,7 +75,7 @@ public class ChatMessage{
 	
 	@Override
 	public String toString() {
-		return "[" + name + "] sent-> " + message;
+		return "[" + name + "] sent -> ";
 	}
 
 	public String getCommand() {
