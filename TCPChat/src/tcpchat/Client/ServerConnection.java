@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @method sendChatMessage
  * 
  * @author brom 
- * @finalized_by a16tobfr
+ * @finalizedBy a16tobfr
  */
 public class ServerConnection {
 	private Socket m_socket = null;
