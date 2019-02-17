@@ -17,20 +17,34 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+/**
+ * 
+ * Methods in this class:
+ * @method main
+ * @method getConnectedClients
+ * @method listenForClientMessages
+ * @method checkIfNameExists
+ * @method disconnectClient
+ * @method individualListenForMessages
+ * @method addClient
+ * @method sendPrivateMessage
+ * @method broadcast
+ *
+ * @finalizedBy a16tobfr
+ * Project: TCPChat
+ * Date: 17 feb. 2019
+ */
 public class Server {
-
 	private ArrayList<ClientConnection> m_connectedClients = new ArrayList<ClientConnection>();
 	private Map<Socket, Boolean> clientsAlive = new HashMap<>();
-	private ServerSocket m_server_socket;
-//	private Socket m_socket;
-	private Socket client_socket;
 	public List<Socket> sockets = new ArrayList<>();
-//	private String input = "{}";
-	public ObjectMapper objectMapper = new ObjectMapper();
-//	public ChatMessage cm = objectMapper.readValue(input, ChatMessage.class);
-//	public ArrayList<Socket> client_sockets = new ArrayList<>();
+	private ServerSocket m_server_socket;
+	private Socket client_socket;
 	private CommandController commandController;
-	private String name;
+
+	private Server(int portNumber) throws IOException {
+		m_server_socket = new ServerSocket(portNumber);
+	}
 
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
 		if (args.length < 1) {
@@ -50,23 +64,16 @@ public class Server {
 		return m_connectedClients;
 	}
 
-	private Server(int portNumber) throws IOException {
-		m_server_socket = new ServerSocket(portNumber);
-	}
-
 	private void listenForClientMessages() throws IOException, ClassNotFoundException {
 		System.out.println("Waiting for client messages... ");
 		do {
 			try {
 				client_socket = m_server_socket.accept();
-				System.out.println(m_server_socket.getReceiveBufferSize());
-				System.out.println("received something");
 				if (!sockets.contains(client_socket)) {
 					individualListenForMessages(client_socket, this);
 				}
 				client_socket = null;
 			} catch (IOException e) {
-				System.out.println("serverListenException");
 				e.printStackTrace();
 				break;
 			}
@@ -88,17 +95,14 @@ public class Server {
 		try {
 			m_connectedClients.remove(c);
 			clientsAlive.put(c.getSocket(), false);
-			System.out.println(c.getName() + " is alive: " + clientsAlive.get(c.getSocket()));
 			ChatMessage dcMessage = new ChatMessage();
 			dcMessage.setMessage(c.getName() + " disconnected");
 			dcMessage.setName(c.getName());
 			dcMessage.setCommand("generic");
 			broadcast(dcMessage);
 			sockets.remove(c.getSocket());
-			System.out.println("helloooooooooo dc");
-			
+
 		} catch (SocketException e) {
-			System.out.println("SOCKET E EXCEPTION DISCONNECT CLIENT!");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -113,22 +117,23 @@ public class Server {
 				do {
 					try {
 						ObjectMapper om = new ObjectMapper();
+						// receive message on the socket.
 						InputStream is = socket.getInputStream();
 						ObjectInputStream ois = new ObjectInputStream(is);
 
-						// deserialize
+						// deserialize the message
 						Object obj = ois.readObject();
 						ChatMessage cm = om.readValue(obj.toString(), ChatMessage.class);
-						System.out.println("hey");
+						cm.setTimeStamp(System.currentTimeMillis() + 1);
+						// if socket is unknown, add client.
 						if (!sockets.contains(socket)) {
-							System.out.println("huoo");
 							addClient(cm.getName(), socket);
 						}
 						if (sockets.contains(socket)) {
+							// make a decision based on the command of the message
 							commandController = new CommandController(cm, server);
 							commandController.makeDecision();
 						} else {
-							System.out.println("break");
 							break;
 						}
 					} catch (SocketException e) {
@@ -137,12 +142,10 @@ public class Server {
 						for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 							c = itr.next();
 							if (c.hasSocket(socket)) {
-								System.out.println("DISCONNECT THE CLIENT!");
 								disconnectClient(c);
 								break;
 							}
 						}
-						System.out.println("client not foun");
 						break;
 					} catch (ClassNotFoundException e) {
 						e.printStackTrace();
@@ -162,13 +165,14 @@ public class Server {
 		thread.start();
 	}
 
-	public synchronized boolean addClient(String name, Socket socket)
+	protected synchronized boolean addClient(String name, Socket socket)
 			throws JsonParseException, JsonMappingException, IOException {
 		ClientConnection c;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			c = itr.next();
 			if (c.hasName(name)) {
-				return false; // Already exists a client with this name
+				// Already exists a client with this name
+				return false;
 			}
 		}
 		sockets.add(socket);
@@ -177,7 +181,7 @@ public class Server {
 		return true;
 	}
 
-	public synchronized void sendPrivateMessage(ChatMessage cm) {
+	protected synchronized void sendPrivateMessage(ChatMessage cm) {
 		try {
 			ClientConnection c;
 			for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
@@ -191,7 +195,7 @@ public class Server {
 		}
 	}
 
-	public synchronized void broadcast(ChatMessage cm) throws IOException {
+	protected synchronized void broadcast(ChatMessage cm) throws IOException {
 		int i = 0;
 		for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 			itr.next().sendMessage(cm, sockets.get(i));

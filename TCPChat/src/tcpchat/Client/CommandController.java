@@ -1,70 +1,86 @@
 package tcpchat.Client;
 
 import java.io.IOException;
-import java.net.Socket;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
-/*
- * This class contains three methods that detects, trims and, sets the command for the message.
+/**
+ * 
+ * Class description:
+ * This class contains methods that detects, trims and, sets the command for the message.
  * Note that the class only handles outgoing messages.
+ * 
+ * Methods in this class:
  * @method detectCommand 	- calls the removeKeyWord method and then calls the setCommand method.
  * @method removeKeyWord 	- simply removes the key word from the message.
  * @method setCommand		- sets the command for the message.
  * @method detectRecipent	- is used to set the recipient in the outgoing message.
  * @method changeName		- is used to change the name of the client; client-side only.
  * 
- * @author a16tobfr
+ * @author a16tobfr 
+ * Project: TCPChat
+ * Date: 17 feb. 2019
  */
 public class CommandController {
 	ChatMessage cm;
 	Client client;
 
-	public CommandController(ChatMessage cm, Client client) {
+	protected CommandController(ChatMessage cm, Client client) {
 		this.cm = cm;
 		this.client = client;
 	}
 
 	protected void detectCommand() {
+		// tell command
 		if (cm.getMessage().startsWith("/tell")) {
 			removeKeyWord("/tell");
 			setCommand(CommandType.TELL);
-		} else if (cm.getMessage().startsWith("/list")) {
+		} 
+		// list command
+		else if (cm.getMessage().startsWith("/list")) {
 			removeKeyWord("/list");
 			setCommand(CommandType.LIST);
-		} else if (cm.getMessage().startsWith("/help")) {
+		} 
+		// help command
+		else if (cm.getMessage().startsWith("/help")) {
 			removeKeyWord("/help");
 			setCommand(CommandType.HELP);
-		} else if (cm.getMessage().startsWith("/join")) {
-			client.listenForMessages = true;
+		} 
+		// join command
+		else if (cm.getMessage().startsWith("/join")) {
 			try {
-				client.setConnection(new ServerConnection("127.0.0.1", 25001, client));
+				client.setConnection(new ServerConnection(Client.getServerIp(), Client.getServerPort(), client));
+				client.setConnected(true);
+				client.listenForServerMessages();
 			} catch (JsonParseException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (JsonMappingException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			removeKeyWord("/join");
 			setCommand(CommandType.JOIN);
-		} else if (cm.getMessage().startsWith("/leave")) {
+		} 
+		// leave command
+		else if (cm.getMessage().startsWith("/leave")) {
 			removeKeyWord("/leave");
 			setCommand(CommandType.LEAVE);
-		} else if (cm.getMessage().startsWith("/qotd")) {
+			client.setConnected(false);
+		} 
+		// qotd command
+		else if (cm.getMessage().startsWith("/qotd")) {
 			removeKeyWord("/qotd");
 			setCommand(CommandType.QOTD);
-		} else if (cm.getMessage().startsWith("/ping")) {
-			removeKeyWord("/ping");
-			setCommand(CommandType.PING);
-		} else if (cm.getMessage().startsWith("/rename")) {
+		} 
+		// rename command
+		else if (cm.getMessage().startsWith("/rename")) {
 			removeKeyWord("/rename");
 			setCommand(CommandType.RENAME);
-		} else if (cm.getMessage().startsWith("/connect")){
+		} 
+		// connect command
+		else if (cm.getMessage().startsWith("/connect")) {
 			removeKeyWord("/connect");
 			setCommand(CommandType.CONNECT);
 		} else {
@@ -78,13 +94,15 @@ public class CommandController {
 		}
 		String temp2;
 		int index = cm.getMessage().indexOf(" ");
-		if (index > -1) { // Check if there is more than one occurrence.
-			temp2 = cm.getMessage().substring(0, index); // Extract first word from message.
+		// Check if there is more than one occurrence.
+		if (index > -1) { 
+			// Extract first word from message.
+			temp2 = cm.getMessage().substring(0, index); 
 		} else {
-			temp2 = cm.getMessage(); // temp2 is the first word.
+			// temp2 is the recipient
+			temp2 = cm.getMessage(); 
 		}
 		cm.setRecipent(temp2);
-		System.out.println("{sending to -> " + temp2 + "}");
 	}
 
 	private void changeName() {
@@ -93,13 +111,15 @@ public class CommandController {
 		}
 		String temp2;
 		int index = cm.getMessage().indexOf(" ");
-		if (index > -1) { // Check if there is more than one occurrence.
-			temp2 = cm.getMessage().substring(0, index); // Extract the first word from message.
+		// Check if there is more than one occurrence.
+		if (index > -1) { 
+			// Extract the first word from message.
+			temp2 = cm.getMessage().substring(0, index); 
 		} else {
-			temp2 = cm.getMessage(); // temp2 is the first word.
+			// temp2 is the name.
+			temp2 = cm.getMessage(); 
 		}
 		cm.setRecipent(temp2);
-		System.out.println(temp2 + " is my new name!");
 		client.getGUI().setTitle(temp2);
 		client.changeName(temp2);
 	}
@@ -164,9 +184,6 @@ public class CommandController {
 			break;
 		case QOTD:
 			cm.setCommand("qotd");
-			break;
-		case PING:
-			cm.setCommand("ping");
 			break;
 		case RENAME:
 			cm.setCommand("rename");

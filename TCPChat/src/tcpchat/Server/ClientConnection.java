@@ -2,6 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
+
 package tcpchat.Server;
 
 import java.io.IOException;
@@ -15,51 +16,55 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * 
+ * Methods in this class:
+ * @method ClientConnection
+ * @method SendMessage
+ * @method hasSocket
+ * @method hasName
+ * @methods get/setName
+ * 
  * @author brom
+ * @finalizedBy a16tobfr
  */
 public class ClientConnection {
-	
 	private String m_name;
 	private Socket m_socket;
 	private String input = "{}";
 
-	public ObjectMapper om = new ObjectMapper();
+	protected ObjectMapper om = new ObjectMapper();
+	protected ChatMessage cm;
 
-	ChatMessage cm;
-	
 	protected Socket getSocket() {
 		return m_socket;
 	}
-	
-	public ClientConnection(String name, Socket socket) throws JsonParseException, JsonMappingException, IOException {
+
+	protected ClientConnection(String name, Socket socket) throws JsonParseException, JsonMappingException, IOException {
 		m_name = name;
 		m_socket = socket;
 		this.cm = om.readValue(input, ChatMessage.class);
 	}
 
-	public void sendMessage(ChatMessage cm, Socket socket) throws IOException {
+	protected void sendMessage(ChatMessage cm, Socket socket) throws IOException {
 		OutputStream os = m_socket.getOutputStream();
 		ObjectOutputStream oos = new ObjectOutputStream(os);
+		cm.setTimeStamp(System.currentTimeMillis());
 		String serializedClass = om.writeValueAsString(cm);
-		System.out.println("sent to " + cm.getName() + ": " + serializedClass);
 		oos.writeObject(serializedClass);
-		System.out.println("Message Sent from Server to Client - " + m_name + "\n" + serializedClass);
 	}
-	
-	public String getName() {
+
+	protected String getName() {
 		return m_name;
 	}
-	
-	public void setName(String name) {
-		System.out.println("m_name = " + m_name);
+
+	protected void setName(String name) {
 		m_name = name;
 	}
-	
-	public boolean hasSocket(Socket socket) {
+
+	protected boolean hasSocket(Socket socket) {
 		return socket.equals(m_socket);
 	}
 
-	public boolean hasName(String testName) {
+	protected boolean hasName(String testName) {
 		return testName.equals(m_name);
 	}
 

@@ -1,16 +1,28 @@
 package tcpchat.Server;
 
 import java.io.IOException;
-import java.net.Socket;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.UUID;
 
+/**
+ * 
+ * Class description:
+ * This class handles the commands of incoming messages from the client.
+ * Each client thread has its own instance of this class so synchronization
+ * is not needed.
+ * 
+ * Methods in this class:
+ * @method makeDecision
+ *
+ * @author a16tobfr 
+ * Project: TCPChat
+ * Date: 17 feb. 2019
+ */
 public class CommandController {
 	private ChatMessage cm;
 	private Server server;
 
-	public CommandController(ChatMessage cm, Server server) {
+	protected CommandController(ChatMessage cm, Server server) {
 		this.cm = cm;
 		this.server = server;
 	}
@@ -24,47 +36,50 @@ public class CommandController {
 			server.broadcast(cm);
 			break;
 		case "tell":
-			// send private message
-
+			boolean found = false;
+			// send a private message to the recipient and the sender.
 			for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 				c = itr.next();
 				if (c.hasName(cm.getRecipent())) {
-					// send private message to recipent
+					// send private message to recipient.
 					cm.setMessage(cm.getMessage().replace(cm.getRecipent(), ""));
 					String temp = cm.getMessage();
 					cm.setMessage(cm.getName() + " whispers -> " + cm.getMessage());
 					server.sendPrivateMessage(cm);
-					// send private message to sender
+					// send private message to sender.
 					cm.setMessage("You whispered " + cm.getRecipent() + " -> " + temp);
 					cm.setRecipent(cm.getName());
 					server.sendPrivateMessage(cm);
+					found = true;
 					break;
 				}
 			}
-			// send private message to sender that sender was not found
-			System.out.println("name not found");
+			// send private message to sender that recipient was not found.
+			if (!found) {
+				cm.setMessage("Client with name - [ " + cm.getRecipent() + " ] - was not found");
+				cm.setRecipent(cm.getName());
+				server.sendPrivateMessage(cm);
+			}
 			break;
 		case "list":
-			// send private message with list of participants
-//			ClientConnection c1;
 			String top = "Clients connected:\n";
 			String bottom = "********************";
 			cm.setMessage(top);
 			cm.setRecipent(cm.getName());
+			// get the name of each client that is connected and add to the message.
 			for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 				c = itr.next();
 				cm.setMessage(cm.getMessage() + c.getName() + "\n");
-				System.out.println(c.getName());
 			}
+			// send a private message with list of participants to the sender.
 			cm.setMessage(cm.getMessage() + bottom);
 			server.sendPrivateMessage(cm);
 			break;
 		case "help":
 			cm.setRecipent(cm.getName());
-			cm.setMessage("/tell \t- send a private message\n" + "/list \t- get a list of connected clients\n"
+			cm.setMessage("\n/tell \t- send a private message\n" + "/list \t- get a list of connected clients\n"
 					+ "/leave \t- disconnect from the server\n" + "/join \t- reconnect to the server\n"
-					+ "/qotd \t- read the quote of the day\n" + "/ping \t- ping the server\n"
-					+ "/rename \t- change your name\n");
+					+ "/qotd \t- read the quote of the day\n" + "/rename \t- change your name\n");
 			server.sendPrivateMessage(cm);
 			break;
 		case "leave":
@@ -77,20 +92,21 @@ public class CommandController {
 					cm.setMessage("You left the server");
 					server.sendPrivateMessage(cm);
 					server.disconnectClient(c);
-					System.out.println("/leave for: " + c.getName() + "-" + cm.getName());
 					break;
 				}
 			}
 			break;
 		case "join":
 			cm.setMessage("[SERVER] -> " + cm.getName() + " has reconnected!");
-			server.broadcast(cm);;
+			server.broadcast(cm);
+			;
 			break;
 		case "qotd":
-			// display qotd message
+			// Get the quote of the day and send it back to the sender.
 			cm.setRecipent(cm.getName());
 			Date date = new Date();
 			int day = date.getDay();
+
 			switch (day) {
 			case 0:
 				cm.setMessage("'The only true widom is knowing you know nothing'\n- Socrates");
@@ -118,44 +134,36 @@ public class CommandController {
 			}
 			server.sendPrivateMessage(cm);
 			break;
-		case "ping":
-			// send private message to client
-			break;
 		case "rename":
-//			ClientConnection c2;
 			for (Iterator<ClientConnection> itr = server.getConnectedClients().iterator(); itr.hasNext();) {
 				c = itr.next();
+				// requested name change is not allowed.
 				if (server.checkIfNameExists(cm.getRecipent())) {
-					System.out.println("DUPLICATE");
 					cm.setCommand("renameDuplicate");
 					cm.setMessage("Client with that name already exists");
 					cm.setRecipent(cm.getName());
 					server.sendPrivateMessage(cm);
 					break;
-				} else {
+				}
+				// change name of the client; server-side.
+				else {
 					if (c.hasName(cm.getName())) {
 						while (cm.getMessage().startsWith(" ")) {
 							cm.setMessage(cm.getMessage().replaceFirst(" ", ""));
 						}
-						System.out.println("1{name change to -> " + c.getName() + "}");
 						String temp1 = c.getName();
-
 						c.setName(cm.getRecipent());
-						cm.setName(cm.getRecipent());
-						cm.setMessage("::{NameChange}:: - " + temp1 + " to " + c.getName());
-
-						System.out.println("2{name change to -> " + c.getName() + "}");
-						server.sendPrivateMessage(cm);
+						cm.setMessage(" - [" + temp1 + " changed name to " + c.getName() + "] -");
+						server.broadcast(cm);
 						break;
 					}
 				}
-			}	
+			}
 			break;
 		case "connect":
 			String temp = cm.getName();
 			cm.setMessage("[SERVER] -> " + temp + " has connected!");
 			server.broadcast(cm);
-
 		default:
 			break;
 		}

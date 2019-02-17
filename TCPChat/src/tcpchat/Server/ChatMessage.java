@@ -2,18 +2,32 @@ package tcpchat.Server;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.annotation.JsonRootName;
+/**
+ * 
+ * Class description:
+ * This class is used when sending and receiving messages
+ * 
+ * Methods in this class:
+ * @methods get/setMessage
+ * @methods get/setName
+ * @methods get/setTimeStamp
+ * @methods get/setCommand
+ * @methods get/setRecipient
+ * @Override toString
+ *
+ * @author a16tobfr 
+ * Project: TCPChat
+ * Date: 17 feb. 2019
+ */
 
 @JsonRootName("server_message")
-@JsonPropertyOrder(value = {"name", "port", "ip", "command", "recipent", "message", "id", "timestamp"})
+@JsonPropertyOrder(value = {"name", "command", "recipent", "message", "timestamp"})
 public class ChatMessage{
 	private String message;
 	private String command;
-	private String ip;
 	private String name;
-	private String id;
 	private String recipent;
 	private long timeStamp;
-	private int port;
 	
 	public ChatMessage() {
 	}
@@ -34,41 +48,12 @@ public class ChatMessage{
 		this.name = name;
 	}
 
-	public String getIp() {
-		return ip;
-	}
-
-	public void setIp(String ip) {
-		this.ip = ip;
-	}
-
-	public String getId() {
-		return id;
-	}
-
-	public void setId(String id) {
-		this.id = id;
-	}
-
-	public int getPort() {
-		return port;
-	}
-
-	public void setPort(int port) {
-		this.port = port;
-	}
-
 	public long getTimeStamp() {
 		return timeStamp;
 	}
 
 	public void setTimeStamp(long timeStamp) {
 		this.timeStamp = timeStamp;
-	}
-	
-	@Override
-	public String toString() {
-		return "[" + name + "] sent-> " + message;
 	}
 
 	public String getCommand() {
@@ -85,5 +70,10 @@ public class ChatMessage{
 
 	public void setRecipent(String recipent) {
 		this.recipent = recipent;
+	}
+	
+	@Override
+	public String toString() {
+		return "[" + name + "] sent-> " + message;
 	}
 }

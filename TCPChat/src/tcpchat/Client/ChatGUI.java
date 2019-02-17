@@ -14,28 +14,30 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.text.DefaultCaret;
 
 /**
  *
  * @author brom
+ * @modifiedBy a16tobfr
+ * -	added auto scroll functionality for when the text fields are larger then that of the window size.
  */
 public class ChatGUI extends JFrame implements ActionListener{
     // This class should be sufficiently complete, although
     // you are allowed to change it if you wish.
 
-    /**
-	 * 
-	 */
     private static final long serialVersionUID = 1L;
     private final JTextField m_chatInput;
     private final JTextArea m_chatOutput;
 
-    public ChatGUI(ActionListener listener, String userName) {
+    protected ChatGUI(ActionListener listener, String userName) {
 	setSize(700,500);
 	setTitle("Chat client for "+userName);
 
 	m_chatOutput = new JTextArea(10,15);
 	m_chatInput = new JTextField(20);
+	DefaultCaret caret = (DefaultCaret)m_chatOutput.getCaret();
+	caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
 	
 	m_chatOutput.setWrapStyleWord(true);
 	m_chatOutput.setLineWrap(true);
@@ -53,15 +55,15 @@ public class ChatGUI extends JFrame implements ActionListener{
 	setVisible(true);
     }
     
-    public void displayMessage(String message) {
+    protected void displayMessage(String message) {
 	m_chatOutput.append(message+"\n");
     }
     
-    public String getInput() {
+    protected String getInput() {
 	return m_chatInput.getText();
     }
 
-    public void clearInput() {
+    protected void clearInput() {
 	m_chatInput.setText("");
     }
 

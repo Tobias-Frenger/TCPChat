@@ -5,26 +5,43 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.Date;
-import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 
+/**
+ * 
+ * Methods in this class:
+ * @method main
+ * @method listenForServerMessages
+ * @method getClientMessage
+ * @method connectToServer
+ * @method changeName
+ * @method getClientMessages
+ * @method getGUI
+ * @method isConnected
+ * @method setConnected
+ * @method setConnection
+ * @method actionPerformed
+ * @methods get/setServerIp
+ * @methods get/setServerPort
+ * 
+ * @finalizedBy a16tobfr 
+ * Project: TCPChat
+ * Date: 17 feb. 2019
+ */
 public class Client implements ActionListener {
-
-	private String m_name = null;
 	private final ChatGUI m_GUI;
+	private String m_name = null;
 	private ServerConnection m_connection = null;
-	private ChatMessage cm = new ChatMessage();
-	private CommandController commandController = new CommandController(cm, this);
-	public boolean listenForMessages = true;
 	
-	protected ChatMessage getClientMessage() {
-		return cm;
-	}
+	private ChatMessage chatMessage = new ChatMessage();
+	private CommandController commandController = new CommandController(chatMessage, this);
 	
+	private boolean isConnected = false;
+	private static String serverIp;
+	private static int serverPort;
 	public static void main(String[] args) throws IOException, ClassNotFoundException {
-		System.out.println(args[0] + " - " + args[1] + " - " + args[2]);
 		if (args.length < 3) {
 			System.err.println("Usage: java Client serverhostname serverportnumber username");
 			System.exit(-1);
@@ -36,22 +53,18 @@ public class Client implements ActionListener {
 			System.err.println("Error: port number must be an integer.");
 			System.exit(-1);
 		}
+		setServerIp(args[0]);
+		setServerPort(args[1]);
 	}
 	
-	protected void changeName(String name) {
-		m_name = name;
-	}
-
 	@SuppressWarnings("deprecation")
 	private Client(String userName) throws JsonParseException, JsonMappingException, IOException {
 		m_name = userName;
-		System.out.println(m_name);
 		// Start up GUI (runs in its own thread)
 		m_GUI = new ChatGUI(this, m_name);
-		cm.setName(m_name);
-		cm.setId(UUID.randomUUID().toString());
-		cm.setTimeStamp(System.currentTimeMillis());
-		
+		chatMessage.setName(m_name);
+		chatMessage.setTimeStamp(System.currentTimeMillis());
+
 		Date date = new Date();
 
 		switch (date.getDay()) {
@@ -86,11 +99,11 @@ public class Client implements ActionListener {
 		m_GUI.displayMessage("Started client at: " + t);
 
 	}
-	
+
 	protected ServerConnection getConnection() {
 		return m_connection;
 	}
-	
+
 	protected void setConnection(ServerConnection sc) {
 		m_connection = sc;
 	}
@@ -106,31 +119,62 @@ public class Client implements ActionListener {
 		}
 	}
 
+	protected void listenForServerMessages() {
+		Thread thread = new Thread() {
+			public void run() {
+				do {
+					m_connection.receiveChatMessage();
+				} while (isConnected);
+			}
+		};thread.start();
+	}
+	
+	protected void changeName(String name) {
+		m_name = name;
+	}
+	
+	protected ChatMessage getClientMessage() {
+		return chatMessage;
+	}
+	
 	protected ChatGUI getGUI() {
 		return m_GUI;
 	}
+	
+	protected boolean isConnected() {
+		return isConnected;
+	}
 
-	protected void listenForServerMessages() {
-		do {
-			System.out.println("preReceive");
-			System.out.println("1" + listenForMessages);
-			m_connection.receiveChatMessage();
-			System.out.println("client received message");
-			System.out.println("2" + listenForMessages);
-		} while (listenForMessages);
+	protected void setConnected(boolean isConnected) {
+		this.isConnected = isConnected;
+	}
+	
+	public static String getServerIp() {
+		return serverIp;
+	}
+
+	public static void setServerIp(String serverIp) {
+		Client.serverIp = serverIp;
+	}
+
+	public static int getServerPort() {
+		return serverPort;
+	}
+
+	public static void setServerPort(String serverPort) {
+		Client.serverPort = Integer.parseInt(serverPort);
 	}
 
 	// Sole ActionListener method; acts as a callback from GUI when user hits enter
 	// in input field
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		cm.setTimeStamp(System.currentTimeMillis());
-		cm.setId(UUID.randomUUID().toString());
-		cm.setMessage(m_GUI.getInput());
+		chatMessage.setTimeStamp(System.currentTimeMillis());
+		chatMessage.setMessage(m_GUI.getInput());
+		chatMessage.setName(m_name);
 		// check if input contained a command
 		commandController.detectCommand();
-		System.out.println("2action: " + cm.getMessage());
-		m_connection.sendChatMessage(cm);
+		m_connection.sendChatMessage(chatMessage);
 		m_GUI.clearInput();
 	}
 }
