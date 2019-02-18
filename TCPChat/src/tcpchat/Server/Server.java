@@ -142,9 +142,15 @@ public class Server {
 						for (Iterator<ClientConnection> itr = m_connectedClients.iterator(); itr.hasNext();) {
 							c = itr.next();
 							if (c.hasSocket(socket)) {
-								disconnectClient(c);
+								try {
+									socket.shutdownInput();
+									disconnectClient(c);
+								} catch (IOException e1) {
+									e1.printStackTrace();
+								}
 								break;
 							}
+							e.printStackTrace();
 						}
 						break;
 					} catch (ClassNotFoundException e) {

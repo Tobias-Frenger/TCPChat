@@ -21,12 +21,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  *
  * Methods in this class:
+ * 
  * @method ServerConnection
  * @method handshake
  * @method receiveChatMessage
  * @method sendChatMessage
  * 
- * @author brom 
+ * @author brom
  * @finalizedBy a16tobfr
  */
 public class ServerConnection {
@@ -72,7 +73,13 @@ public class ServerConnection {
 			Date date = new Date();
 			client.getGUI().displayMessage("[" + date.getHours() + ":" + date.getMinutes() + "] " + cm.getMessage());
 		} catch (SocketException e) {
-			client.getGUI().displayMessage("Possible server failure\n" + "Try restarting your client");
+			try {
+				m_socket.shutdownInput();
+				client.setConnected(false);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+			client.getGUI().displayMessage("Possible server failure\n" + "Try typing /join");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
@@ -92,6 +99,7 @@ public class ServerConnection {
 			objectos.writeObject(serializedMessage);
 		} catch (JsonProcessingException e1) {
 			e1.printStackTrace();
+		} catch (SocketException e) {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
