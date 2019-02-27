@@ -150,7 +150,6 @@ public class Server {
 								}
 								break;
 							}
-							e.printStackTrace();
 						}
 						break;
 					} catch (ClassNotFoundException e) {
